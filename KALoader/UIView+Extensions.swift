@@ -13,48 +13,48 @@ private var associationKey = "view_kaloader_key"
 
 // MARK: - ViewKALoader
 internal extension UIView {
-  var viewKALoader: KALoaderView? {
-    get {
-      return objc_getAssociatedObject(self, &associationKey) as? KALoaderView
+    var viewKALoader: KALoaderView? {
+        get {
+            return objc_getAssociatedObject(self, &associationKey) as? KALoaderView
+        }
+        set {
+            objc_setAssociatedObject(self, &associationKey, newValue, .OBJC_ASSOCIATION_RETAIN)
+        }
     }
-    set {
-      objc_setAssociatedObject(self, &associationKey, newValue, .OBJC_ASSOCIATION_RETAIN)
-    }
-  }
 }
 
 // MARK: - Internal methods
 internal extension UIView {
-  func _showLoader() {
-    guard let viewKALoader = viewKALoader else { return }
+    func _showLoader() {
+        guard let viewKALoader = viewKALoader else { return }
 
-    insertSubview(viewKALoader, at: 0)
-    viewKALoader.startAnimateLayer()
-  }
+        insertSubview(viewKALoader, at: 0)
+        viewKALoader.startAnimateLayer()
+    }
 }
 
 // MARK: - Defaults methods
 public extension UIView {
-  func showLoader() {
-    if viewKALoader != nil { return }
-    viewKALoader = KALoaderView(frame: self.bounds)
-    _showLoader()
-  }
+    func showLoader() {
+        if viewKALoader != nil { return }
+        viewKALoader = KALoaderView(frame: self.bounds)
+        _showLoader()
+    }
 
-  func showLoader(colors: [UIColor], animationDuration: TimeInterval = 0.7) {
-    if viewKALoader != nil { return }
-    viewKALoader = KALoaderView(frame: self.bounds)
-    viewKALoader?.setCustom(colors: colors, gradientAnimationDuration: animationDuration)
-    _showLoader()
-  }
+    func showLoader(colors: (background: UIColor, moving: UIColor), animationDuration: TimeInterval = 0.7) {
+        if viewKALoader != nil { return }
+        viewKALoader = KALoaderView(frame: self.bounds)
+        viewKALoader?.set(colors: colors, animationDuration: animationDuration)
+        _showLoader()
+    }
 
-  func hideLoader() {
-    viewKALoader?.stopAnimateLayer()
-    viewKALoader?.removeFromSuperview()
-    self.viewKALoader = nil
-  }
+    func hideLoader() {
+        viewKALoader?.stopAnimateLayer()
+        viewKALoader?.removeFromSuperview()
+        self.viewKALoader = nil
+    }
 
-  func isLoaderShowing() -> Bool {
-    return viewKALoader != nil
-  }
+    func isLoaderShowing() -> Bool {
+        return viewKALoader != nil
+    }
 }

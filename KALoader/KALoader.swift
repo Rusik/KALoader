@@ -9,64 +9,71 @@
 import Foundation
 
 internal class KALoaderView: UIView {
-  /// Constants
-  private let gradientWidth: CGFloat = 0.2
-  private let gradientStop: CGFloat = 0.1
-  private let backGrayColor = UIColor(red: 246.0 / 255, green: 246.0 / 255, blue: 246.0 / 255, alpha: 1.0)
-  private let firstLoadColor = UIColor(red: 222.0 / 255, green: 222.0 / 255, blue: 222.0 / 255, alpha: 1.0)
-  private let secondLoadColor = UIColor(red: 221.0 / 255, green: 221.0 / 255, blue: 221.0 / 255, alpha: 1.0)
-  private let fillMode: String = kCAFillModeForwards
-  private var gradientAnimationDuration: TimeInterval = 0.7
+    private var gradientLayer: CAGradientLayer
 
-  private var gradientLayer: CAGradientLayer!
+    private static let defaultGradientAnimationDuration: TimeInterval = 2
+    private var gradientAnimationDuration: TimeInterval = 2
+    private let widthRatio = 3.0
+    private let gradientRatio = 0.2
 
-  override init(frame: CGRect) {
-    super.init(frame: frame)
+    private let colors = (
+        background: UIColor(white: 0.97, alpha: 1),
+        moving: UIColor(white: 0.9, alpha: 1)
+    )
 
-    gradientLayer = CAGradientLayer()
-    gradientLayer.startPoint = CGPoint(x: 0.0, y: 0.0)
-    gradientLayer.endPoint = CGPoint(x: 1.0, y: 0.0)
-    gradientLayer.colors = [backGrayColor.cgColor, firstLoadColor.cgColor,
-                            secondLoadColor.cgColor, firstLoadColor.cgColor, backGrayColor.cgColor]
-    gradientLayer.locations = [0, 0, 0,
-                               NSNumber(value: Double(gradientWidth)),
-                               NSNumber(value: Double(1 + gradientWidth))]
+    override init(frame: CGRect) {
+        gradientLayer = CAGradientLayer()
+        super.init(frame: frame)
 
-    gradientLayer.frame = frame
-    layer.insertSublayer(gradientLayer, at: 0)
-  }
-  
-  required init?(coder aDecoder: NSCoder) {
-    fatalError("init(coder:) has not been implemented")
-  }
+        // Use -0.1 value instead of 0 due to strange bug with static 1 point width line on start
+        gradientLayer.startPoint = CGPoint(x: -0.1, y: 0)
+        gradientLayer.endPoint = CGPoint(x: 1, y: 0)
 
-  func setFrameForGradientLayer(frame: CGRect) {
-    gradientLayer.frame = frame
-  }
+        set(colors: colors)
 
-  func setCustom(colors: [UIColor], gradientAnimationDuration: TimeInterval) {
-    if colors.count != 5 {
-      assertionFailure("You should send 5 colors in colors array")
+        gradientLayer.locations = [
+            NSNumber(value: 0),
+            NSNumber(value: 1 - gradientRatio),
+            NSNumber(value: 1),
+            NSNumber(value: 1 + gradientRatio),
+            NSNumber(value: widthRatio - gradientRatio),
+            NSNumber(value: widthRatio),
+            ].map { NSNumber(value: $0.doubleValue - (widthRatio - 1) ) }
+
+        gradientLayer.frame = frame
+        layer.insertSublayer(gradientLayer, at: 0)
     }
-    var cgColors = [CGColor]()
-    colors.forEach({ cgColors.append($0.cgColor) })
-    self.gradientLayer.colors = cgColors
-    self.gradientAnimationDuration = gradientAnimationDuration
-  }
 
-  func startAnimateLayer() {
-    let gradientAnimation = CABasicAnimation(keyPath: "locations")
-    gradientAnimation.fromValue = gradientLayer.locations
-    gradientAnimation.toValue = [0, 1, 1,
-                                 NSNumber(value: Double(1 + (gradientWidth - gradientStop))),
-                                 NSNumber(value: Double(1 + gradientWidth))]
-    gradientAnimation.duration = gradientAnimationDuration
-    gradientAnimation.fillMode = fillMode
-    gradientAnimation.repeatCount = .infinity
-    gradientLayer.add(gradientAnimation, forKey: nil)
-  }
+    required init?(coder aDecoder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
 
-  func stopAnimateLayer() {
-    gradientLayer.removeAllAnimations()
-  }
+    func set(colors: (background: UIColor, moving: UIColor), animationDuration: TimeInterval = defaultGradientAnimationDuration) {
+
+        gradientLayer.colors = [
+            colors.background.cgColor,
+            colors.background.cgColor,
+            colors.moving.cgColor,
+            colors.background.cgColor,
+            colors.background.cgColor,
+            colors.moving.cgColor,
+        ]
+
+        self.gradientAnimationDuration = animationDuration
+    }
+
+    func startAnimateLayer() {
+        let gradientAnimation = CABasicAnimation(keyPath: "locations")
+        gradientAnimation.fromValue = gradientLayer.locations
+        gradientLayer.locations = gradientLayer.locations?.map { NSNumber(value: $0.doubleValue + (widthRatio - 1) ) }
+
+        gradientAnimation.duration = gradientAnimationDuration
+        gradientAnimation.fillMode = kCAFillModeForwards
+        gradientAnimation.repeatCount = .infinity
+        gradientLayer.add(gradientAnimation, forKey: nil)
+    }
+
+    func stopAnimateLayer() {
+        gradientLayer.removeAllAnimations()
+    }
 }
